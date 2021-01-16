@@ -13,6 +13,8 @@ namespace ConsoleApp1.Model
         public Player FirstPlayer { get; set; }
         public Player SecondPlayer { get; set; }
 
+        public List<Player> Players { get => new List<Player>() { FirstPlayer, SecondPlayer }; } 
+
         public override string ToString()
         {
             return string.Format($"{FirstPlayer} vs {SecondPlayer}");

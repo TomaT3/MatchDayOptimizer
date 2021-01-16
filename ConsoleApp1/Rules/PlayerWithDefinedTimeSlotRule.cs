@@ -6,15 +6,16 @@ using System.Text;
 
 namespace ConsoleApp1.Rules
 {
-    public static class PlayerWithDefinedTimeSlotRule
+    public static class PlayerHasToPlayInDefinedTimeSlotRule
     {
         public static int GetRatedNumber(PlaydaySchedule playdaySchedule,Player player, int[] timeSlots, int importance)
         {
             var scheduledMatches = playdaySchedule.PlaydayMatches;
-            foreach(var timeslotNumber in timeSlots)
+            var matchesPlayerMustPlay = scheduledMatches.Where(m => timeSlots.Any(t => t == m.Timeslot.Number));
+            foreach (var match in matchesPlayerMustPlay)
             {
-                if (scheduledMatches[timeslotNumber].Match.FirstPlayer != player &&
-                    scheduledMatches[timeslotNumber].Match.SecondPlayer != player)
+                if (match.Match.FirstPlayer != player &&
+                    match.Match.SecondPlayer != player)
                 {
                     return 100 - importance;
                 }
