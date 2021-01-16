@@ -56,10 +56,10 @@ namespace ConsoleApp1
             foreach (var playday in allPossiblePlaydays)
             {
                 var firstRating = PlayerHasToPlayInDefinedTimeSlotRule.GetRatedNumber(playday, playersRepository.Players.GetPlayer(1), new int[] { 1, 3 }, 80);
-                var asd = PlayerShouldPlayInGivenTimeslotsRule.GetRatedNumber(playday, playersRepository.Players.GetPlayer(1), new int[] { 1, 2, 3, 4 }, 60);
                 var secondRating = PlayerHasToPlayInDefinedTimeSlotRule.GetRatedNumber(playday, playersRepository.Players.GetPlayer(4), new int[] { 2, 4 }, 30);
+                var thirdRating = PlayerShouldPlayInGivenTimeslotsRule.GetRatedNumber(playday, playersRepository.Players.GetPlayer(1), new int[] { 1, 2, 3, 4 }, 60);
 
-                double overallPlaydayRating = (firstRating + secondRating) / 2.0;
+                double overallPlaydayRating = (firstRating + secondRating+ thirdRating) / 3.0;
                 ratedPlayDayList.Add((overallPlaydayRating, playday));
             }
 

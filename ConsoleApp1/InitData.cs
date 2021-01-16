@@ -40,7 +40,7 @@ namespace ConsoleApp1
                 new TimeSlot() { Number = 9 },
                 new TimeSlot() { Number = 10 },
                 new TimeSlot() { Number = 11 },
-                new TimeSlot() { Number = 12 },
+                //new TimeSlot() { Number = 12 },
                 //new TimeSlot() { Number = 13 },
             };
         }
