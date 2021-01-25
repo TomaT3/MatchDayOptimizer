@@ -8,8 +8,10 @@ namespace ConsoleApp1.Model
     [DebuggerDisplay("{PlaydayMatches}")]
     public class PlaydaySchedule
     {
-        public PlaydaySchedule(List<ScheduledMatch> playdayMatches) => (PlaydayMatches) = (playdayMatches);
-        public List<ScheduledMatch> PlaydayMatches { get; set; }
+        public PlaydaySchedule(Dictionary<int, Match[]> playdayMatches) => (PlaydayMatches) = (playdayMatches);
+        //public List<ScheduledMatches> PlaydayMatches { get; set; }
+
+        public Dictionary<int, Match[]> PlaydayMatches { get; set; }
 
         public override string ToString()
         {

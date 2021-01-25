@@ -11,27 +11,31 @@ namespace ConsoleApp1
 {
     class Program
     {
+        public static int NUMBER_OF_COURTS = 6;
+        public static int NUMBER_OF_TIMESLOTS = 7;
+
         static void Main(string[] args)
         {
             var playersRepository = new PlayersRepository();
             var possibleMatches = InitData.GetPossibleMatches(playersRepository.Players);
-            var timeSlots = InitData.GetTimeSlots();
+            //var timeSlots = InitData.GetTimeSlots();
 
 
-            var test = from timeslot in timeSlots
-                       from match in possibleMatches
-                       select new { Group = match, Combination = timeslot };
+            //var test = from timeslot in timeSlots
+            //           from match in possibleMatches
+            //           select new { Group = match, Combination = timeslot };
 
             var stopwatchForGetPossiblePlaydays = Stopwatch.StartNew();
-            var allPossiblePlaydays = GetAllPossibleMatches(possibleMatches, timeSlots);
+            var allPossiblePlaydays = GetAllPossibleMatches(possibleMatches);
             stopwatchForGetPossiblePlaydays.Stop();
+            Console.WriteLine($"Time needed to calculate all possible playdays: {stopwatchForGetPossiblePlaydays.Elapsed}");
 
             var stopwatchForApplyingRules = Stopwatch.StartNew();
             List<(double rating, PlaydaySchedule playday)> ratedPlayDayList = ApplyRules(playersRepository, allPossiblePlaydays);
             var sortedPlayDayList = ratedPlayDayList.OrderByDescending(p => p.rating).ToList();
             stopwatchForApplyingRules.Stop();
 
-            Console.WriteLine($"Time needed to calculate all possible playdays: {stopwatchForGetPossiblePlaydays.Elapsed}");
+           
             Console.WriteLine($"Time needed to apply rules to all possible playdays: {stopwatchForApplyingRules.Elapsed}");
             Console.WriteLine(Environment.NewLine);
             for (int i = 1; i < 4; i++)
@@ -41,7 +45,9 @@ namespace ConsoleApp1
                 Console.WriteLine($"#{i} - with Rating: {rating}%");
                 foreach (var match in playday.PlaydayMatches)
                 {
-                    Console.WriteLine($"{match.Timeslot} - {match.Match}");
+                    Console.WriteLine($"Timeslot {match.Key}");
+                    foreach(var m in match.Value)
+                    Console.WriteLine($"     {m}");
                 }
 
                 Console.WriteLine(Environment.NewLine);
@@ -55,9 +61,9 @@ namespace ConsoleApp1
             var ratedPlayDayList = new List<(double rating, PlaydaySchedule playday)>();
             foreach (var playday in allPossiblePlaydays)
             {
-                var firstRating = PlayerHasToPlayInDefinedTimeSlotRule.GetRatedNumber(playday, playersRepository.Players.GetPlayer(1), new int[] { 1, 3 }, 80);
-                var secondRating = PlayerHasToPlayInDefinedTimeSlotRule.GetRatedNumber(playday, playersRepository.Players.GetPlayer(4), new int[] { 2, 4 }, 30);
-                var thirdRating = PlayerShouldPlayInGivenTimeslotsRule.GetRatedNumber(playday, playersRepository.Players.GetPlayer(1), new int[] { 1, 2, 3, 4 }, 60);
+                var firstRating = PlayerHasToPlayInDefinedTimeSlotRule.GetRatedNumber(playday, playersRepository.Players.GetPlayer(1), new int[] { 0, 2 }, 80);
+                var secondRating = PlayerHasToPlayInDefinedTimeSlotRule.GetRatedNumber(playday, playersRepository.Players.GetPlayer(4), new int[] { 1, 3 }, 30);
+                var thirdRating = PlayerShouldPlayInGivenTimeslotsRule.GetRatedNumber(playday, playersRepository.Players.GetPlayer(1), new int[] { 0, 1, 2, 3 }, 60);
 
                 double overallPlaydayRating = (firstRating + secondRating+ thirdRating) / 3.0;
                 ratedPlayDayList.Add((overallPlaydayRating, playday));
@@ -66,56 +72,78 @@ namespace ConsoleApp1
             return ratedPlayDayList;
         }
 
-        public static List<PlaydaySchedule> GetAllPossibleMatches(List<Match> possibleMatches, List<TimeSlot> timeSlots)
+        public static List<PlaydaySchedule> GetAllPossibleMatches(List<Match> possibleMatches)
         {
-           
+            var maxPossibleMatches = NUMBER_OF_TIMESLOTS * NUMBER_OF_COURTS;
             var allPossiblePlaydays = new List<PlaydaySchedule>();
-            var used = new bool[timeSlots.Count];
+            var used = new bool[maxPossibleMatches];
             Array.Fill(used, false);
-            GetCombionations(timeSlots.ToArray(), possibleMatches.ToArray(), used, 0, new List<int>(), ref allPossiblePlaydays);
+            GetCombionations(maxPossibleMatches, possibleMatches.ToArray(), used, 0, new List<int>(), ref allPossiblePlaydays);
             return allPossiblePlaydays;
         }
 
-        public static void GetCombionations(TimeSlot[] timeSlot, Match[] matches, bool[] used, int startIndex, List<int> stack, ref List<PlaydaySchedule> allPossiblePlaydays)
+        public static void GetCombionations(int maxPossibleMatches, Match[] matches, bool[] used, int startIndex, List<int> stack, ref List<PlaydaySchedule> allPossiblePlaydays)
         {
 
-            if (stack.Count >= timeSlot.Length)
+            if (stack.Count >= maxPossibleMatches)
             {
-                var playdaySchedule = GetPlaydaySchedule(stack, timeSlot, matches);
+                //Debug.WriteLine(string.Join(",", stack.ToArray()));
+                var playdaySchedule = GetPlaydaySchedule(stack.ToArray(), matches);
                 allPossiblePlaydays.Add(playdaySchedule);
                 return;
             }
-            for (int i = 0; i < timeSlot.Length; i++)
+            for (int i = 0; i < maxPossibleMatches; i++)
             {
                 if (!used[i])
                 {
+                    stack.Add(i);
+                    var isOk = matches.IsOk(stack.ToArray(), NUMBER_OF_COURTS);
 
-                    if (stack.Count > 0)
+                    if (!isOk)
                     {
-                        var match1 = GetMatchAt(matches, stack.Last());
-                        var match2 = GetMatchAt(matches, i);
-                        if (IsOnePlayerIn2Matches(match1, match2))
-                            continue;
+                        stack.RemoveAt(stack.Count - 1);
+                        continue;
                     }
+                        
+
+                    //if (stack.Count > 0)
+                    //{
+                    //    var match1 = GetMatchAt(matches, stack.Last());
+                    //    var match2 = GetMatchAt(matches, i);
+                    //    if (IsOnePlayerIn2Matches(match1, match2))
+                    //        continue;
+                    //}
 
                     used[i] = true;
-                    stack.Add(i);
-                    GetCombionations(timeSlot, matches, used, i, stack, ref allPossiblePlaydays);
+                    //stack.Add(i);
+                    GetCombionations(maxPossibleMatches, matches, used, i, stack, ref allPossiblePlaydays);
                     stack.RemoveAt(stack.Count-1);
                     used[i] = false;
                 }
             }
         }
 
-        public static PlaydaySchedule GetPlaydaySchedule(List<int> stack, TimeSlot[] timeSlot, Match[] possibleMatches)
+        public static PlaydaySchedule GetPlaydaySchedule(int[] matchNumbersStack, Match[] possibleMatches)
         {
-            var scheduledMatches = new List<ScheduledMatch>();
-            for (int i = 0; i < timeSlot.Length; i++)
+            var scheduledMatches = new Dictionary<int, Match[]>();
+            int j = 0;
+            for (int i = 0; i < NUMBER_OF_TIMESLOTS; i++)
             {
-                var timeslot = timeSlot[i];
-                var match = stack.ElementAt(i) >= possibleMatches.Length ? new Match(null, null) : possibleMatches[stack.ElementAt(i)];
-                var scheduledMatch = new ScheduledMatch(timeslot, match);
-                scheduledMatches.Add(scheduledMatch);
+
+                int toArrayNumber;
+                if (j + NUMBER_OF_COURTS >= matchNumbersStack.Length)
+                {
+                    toArrayNumber = matchNumbersStack.Length;
+                }
+                else
+                {
+                    toArrayNumber = j + NUMBER_OF_COURTS;
+                }
+                var matchNumbersAtSameTime = matchNumbersStack[j..toArrayNumber];
+                var matchesAtSameTime = matchNumbersAtSameTime.Select((m) => possibleMatches.ElementAt(m)).ToArray();
+                scheduledMatches.Add(i, matchesAtSameTime);
+
+                j = toArrayNumber;
             }
 
             return new PlaydaySchedule(scheduledMatches);
